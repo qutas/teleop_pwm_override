@@ -22,7 +22,7 @@ class TeleopPWMOverride {
 
 		bool param_override_enable_;
 		bool param_failsafe_enable_;
-		bool param_num_channels_;
+		int param_num_channels_;
 
 		std::vector<bool> chan_enable_;
 		std::vector<uint16_t> chan_raw_;
@@ -32,6 +32,7 @@ class TeleopPWMOverride {
 
 		~TeleopPWMOverride( void );
 
+	private:
 		void callback_timer(const ros::TimerEvent& e);
 		void callback_cfg_pwm(teleop_pwm_override::PWMOverrideConfig &config, uint32_t level);
 };
@@ -57,7 +58,7 @@ TeleopPWMOverride::TeleopPWMOverride() :
 
 	dyncfg_pwm_.setCallback(boost::bind(&TeleopPWMOverride::callback_cfg_pwm, this, _1, _2));
 
-	ros::Timer timer_ = nh_.createTimer(ros::Duration(1/param_rate_), &TeleopPWMOverride::callback_timer, this);
+	timer_ = nh_.createTimer(ros::Duration(0.01), &TeleopPWMOverride::callback_timer, this);
 
 	ROS_INFO("Ready to send PWM overrides");
 }
@@ -90,25 +91,21 @@ void TeleopPWMOverride::callback_cfg_pwm(teleop_pwm_override::PWMOverrideConfig 
 }
 
 void TeleopPWMOverride::callback_timer(const ros::TimerEvent& e) {
-	ROS_INFO("TEST");
+	mavros_msgs::OverrideRCIn msg_out;
 
-	if(param_override_enable_) {
-		mavros_msgs::OverrideRCIn msg_out;
-
-		for(int i=0; i<param_num_channels_; i++) {
+	for(int i=0; i<param_num_channels_; i++) {
+		if(param_override_enable_ && chan_enable_[i]) {
 			if(param_failsafe_enable_) {
 				msg_out.channels[i] = param_failsafe_pwm_;
 			} else {
-				if(chan_enable_[i]) {
-					msg_out.channels[i] = msg_out.CHAN_NOCHANGE;
-				} else {
-					msg_out.channels[i] = chan_raw_[i];
-				}
+				msg_out.channels[i] = chan_raw_[i];
 			}
+		} else {
+			msg_out.channels[i] = msg_out.CHAN_NOCHANGE;
 		}
-
-		pub_pwm_.publish(msg_out);
 	}
+
+	pub_pwm_.publish(msg_out);
 }
 
 

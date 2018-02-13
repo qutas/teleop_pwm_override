@@ -1,7 +1,6 @@
 <?xml version='1.0'?>
 <launch>
-	<node name="teleop_pwm_override" pkg="teleop_pwm_override" type="teleop_pwm_override_node" respawn="false"
-	ns="/" output="screen">
+	<node name="teleop_pwm_override" pkg="teleop_pwm_override" type="teleop_pwm_override_node" respawn="false" output="screen">
 		<param name="rate" value="50" />
 		<param name="pwm_failsafe" value="1050" />
 
